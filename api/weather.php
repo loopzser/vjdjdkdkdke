@@ -1,5 +1,5 @@
 <?php
-$botToken = ":";
+$botToken = "8320125696:AAEpsJbdGuf_75pCVrdkRhCsXgSdbPuQQtg";
 $chatId = "";
 $weatherKey = "5263f75a4e738f5b297b1b5ca639cc1c";
 
