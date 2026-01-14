@@ -1,6 +1,6 @@
 <?php
-$botToken = "";
-$chatId = "";
+$botToken = "8320125696:AAEpsJbdGuf_75pCVrdkRhCsXgSdbPuQQtg";
+$chatId = "5157658865";
 $weatherKey = "5263f75a4e738f5b297b1b5ca639cc1c";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
